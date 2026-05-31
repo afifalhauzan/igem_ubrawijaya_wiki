@@ -1,5 +1,13 @@
+import Hero from './components/Hero'
+import TeamCard from './components/TeamCard'
+
 function TeamPage() {
-  return <h1 className="text-3xl font-semibold">Team</h1>
+  return (
+    <div className="space-y-12 pb-6">
+      <Hero />
+      <TeamCard />
+    </div>
+  )
 }
 
 export default TeamPage

@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import LeftRail from './LeftRail'
+import RightRail from './RightRail'
 import logo from '../../../assets/logo.svg'
 
 const navItems = [
@@ -39,7 +41,8 @@ function Navbar() {
   const railRef = useRef<HTMLElement | null>(null)
   const itemRefs = useRef<Record<string, HTMLAnchorElement | null>>({})
   const logoShellShadow = '2px 2px 5px rgba(0, 0, 0, 0.18), inset 1px 1px 5px rgba(0, 0, 0, 0.08)'
-  const navShellShadow = logoShellShadow
+  const railHeight = 44
+  const railDropShadow = 'drop-shadow(2px 2px 5px rgba(0, 0, 0, 0.18))'
   const railGap = 14
   const [capsule, setCapsule] = useState<CapsulePosition>({
     x: 0,
@@ -132,72 +135,74 @@ function Navbar() {
   }, [updateCapsulePosition])
 
   return (
-    <header className="border-b border-[var(--color-border)] bg-white/95 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-8 gap-y-3 px-4 py-3 sm:px-6">
-        <span
-          className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm text-[#1f355d]"
-          style={{ boxShadow: logoShellShadow }}
-        >
-          <img src={logo} alt="iGEM UB logo" className="mr-2 h-7 w-auto" />
-        </span>
-        <div className="relative inline-flex shrink-0 overflow-visible text-sm">
-          <div className="pointer-events-none absolute inset-0 z-0">
+    <header className="relative flex w-full justify-center bg-transparent">
+      <div className="fixed z-50 bg-transparent">
+        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-8 gap-y-3 px-4 py-3 sm:px-6">
+          <span
+            className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm text-[#1f355d]"
+            style={{ boxShadow: logoShellShadow }}
+          >
+            <img src={logo} alt="iGEM UB logo" className="mr-2 h-7 w-auto" />
+          </span>
+          <div className="relative inline-flex shrink-0 overflow-visible text-sm">
+            <div className="pointer-events-none absolute inset-0 z-0">
+              {capsule.isVisible ? (
+                <>
+                  {leftRailWidth > 0 ? (
+                    <LeftRail
+                      width={leftRailWidth}
+                      height={railHeight}
+                      className="absolute bottom-0 left-0"
+                      style={{ filter: railDropShadow }}
+                    />
+                  ) : null}
+                  {rightRailWidth > 0 ? (
+                    <RightRail
+                      width={rightRailWidth}
+                      height={railHeight}
+                      className="absolute bottom-0"
+                      style={{ left: rightRailStart, filter: railDropShadow }}
+                    />
+                  ) : null}
+                </>
+              ) : (
+                <div
+                  className="absolute inset-x-0 bottom-0 h-11 rounded-full bg-white"
+                  style={{ boxShadow: logoShellShadow }}
+                />
+              )}
+            </div>
+
             {capsule.isVisible ? (
-              <>
-                {leftRailWidth > 0 ? (
-                  <div
-                    className="absolute bottom-0 left-0 h-11 rounded-full bg-white"
-                    style={{ width: leftRailWidth, boxShadow: navShellShadow }}
-                  >
-                    {/* <div className="pointer-events-none absolute right-[-12px] top-1/2 h-8 w-8 -translate-y-1/2 rounded-full bg-[var(--color-surface)]" /> */}
-                  </div>
-                ) : null}
-                {rightRailWidth > 0 ? (
-                  <div
-                    className="absolute bottom-0 h-11 rounded-full bg-white"
-                    style={{ left: rightRailStart, width: rightRailWidth, boxShadow: navShellShadow }}
-                  >
-                    {/* <div className="pointer-events-none absolute left-[-12px] top-1/2 h-8 w-8 -translate-y-1/2 rounded-full bg-[var(--color-surface)]" /> */}
-                  </div>
-                ) : null}
-              </>
-            ) : (
-              <div
-                className="absolute inset-x-0 bottom-0 h-11 rounded-full bg-white"
-                style={{ boxShadow: navShellShadow }}
+              <motion.div
+                initial={false}
+                animate={{ x: capsule.x, width: capsule.width }}
+                transition={capsuleTransition}
+                className="pointer-events-none absolute left-0 z-10 h-11 rounded-full bg-gradient-to-r from-[#406EB5] to-[#2C4B7C] shadow-[0_12px_26px_rgba(38,74,138,0.34),inset_0_1px_2px_rgba(255,255,255,0.2)]"
               />
-            )}
+            ) : null}
+
+            <nav ref={railRef} className="relative z-20 flex w-fit items-center gap-1 p-0.5">
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  ref={(element) => {
+                    itemRefs.current[item.to] = element
+                  }}
+                  className={({ isActive }) =>
+                    [
+                      'relative rounded-full px-6 py-2.5 font-bold tracking-[0.06em] transition-colors duration-200',
+                      isActive ? '!text-white' : 'text-[#203458] hover:text-[#172b4b]',
+                    ].join(' ')
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </nav>
           </div>
-
-          {capsule.isVisible ? (
-            <motion.div
-              initial={false}
-              animate={{ x: capsule.x, width: capsule.width }}
-              transition={capsuleTransition}
-              className="pointer-events-none absolute left-0 z-10 h-11 rounded-full bg-gradient-to-r from-[#406EB5] to-[#2C4B7C] shadow-[0_12px_26px_rgba(38,74,138,0.34),inset_0_1px_2px_rgba(255,255,255,0.2)]"
-            />
-          ) : null}
-
-          <nav ref={railRef} className="relative z-20 flex w-fit items-center gap-1 p-0.5">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                ref={(element) => {
-                  itemRefs.current[item.to] = element
-                }}
-                className={({ isActive }) =>
-                  [
-                    'relative rounded-full px-6 py-2.5 font-bold tracking-[0.06em] transition-colors duration-200',
-                    isActive ? '!text-white' : 'text-[#203458] hover:text-[#172b4b]',
-                  ].join(' ')
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
         </div>
       </div>
     </header>
