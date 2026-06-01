@@ -6,7 +6,7 @@ function MainLayout() {
   return (
     <div className="min-h-screen bg-[var(--color-surface)] text-[var(--color-text-primary)]">
       <Navbar />
-      <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
+      <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 pt-20 sm:pt-24">
         <Outlet />
       </main>
       <Footer />

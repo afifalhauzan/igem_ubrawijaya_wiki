@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import LeftRail from './LeftRail'
@@ -38,6 +38,7 @@ function isItemActive(pathname: string, to: string, end?: boolean) {
 
 function Navbar() {
   const location = useLocation()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const railRef = useRef<HTMLElement | null>(null)
   const itemRefs = useRef<Record<string, HTMLAnchorElement | null>>({})
   const logoShellShadow = '2px 2px 5px rgba(0, 0, 0, 0.18), inset 1px 1px 5px rgba(0, 0, 0, 0.08)'
@@ -85,8 +86,6 @@ function Navbar() {
 
   useLayoutEffect(() => {
     updateCapsulePosition()
-
-    // Re-measure on the next frame in case initial layout settles after first paint.
     const frameId = requestAnimationFrame(updateCapsulePosition)
     return () => cancelAnimationFrame(frameId)
   }, [updateCapsulePosition])
@@ -99,12 +98,15 @@ function Navbar() {
     }
 
     window.addEventListener('resize', handleResize)
-
     return () => {
       cancelAnimationFrame(frameId)
       window.removeEventListener('resize', handleResize)
     }
   }, [updateCapsulePosition])
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false)
+  }, [location.pathname])
 
   useEffect(() => {
     const fonts = document.fonts
@@ -113,13 +115,10 @@ function Navbar() {
     }
 
     let isMounted = true
-
     const remeasure = () => {
-      if (!isMounted) {
-        return
+      if (isMounted) {
+        requestAnimationFrame(updateCapsulePosition)
       }
-
-      requestAnimationFrame(updateCapsulePosition)
     }
 
     fonts.ready.then(remeasure).catch(() => {
@@ -127,7 +126,6 @@ function Navbar() {
     })
 
     fonts.addEventListener('loadingdone', remeasure)
-
     return () => {
       isMounted = false
       fonts.removeEventListener('loadingdone', remeasure)
@@ -136,7 +134,98 @@ function Navbar() {
 
   return (
     <header className="relative flex w-full justify-center bg-transparent">
-      <div className="fixed z-50 bg-transparent">
+      <div className="fixed z-50 w-full px-4 py-3 sm:px-6 lg:hidden">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between">
+          <span
+            className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm text-[#1f355d]"
+            style={{ boxShadow: logoShellShadow }}
+          >
+            <img src={logo} alt="iGEM UB logo" className="h-7 w-auto" />
+          </span>
+
+          <button
+            type="button"
+            aria-label="Open navigation menu"
+            aria-expanded={isMobileMenuOpen}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white text-[#203458] hover:bg-slate-50"
+            style={{ boxShadow: logoShellShadow }}
+            onClick={() => setIsMobileMenuOpen(true)}
+          >
+            <span className="flex flex-col gap-1.5">
+              <span className="h-0.5 w-5 rounded-full bg-current" />
+              <span className="h-0.5 w-5 rounded-full bg-current" />
+              <span className="h-0.5 w-5 rounded-full bg-current" />
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {isMobileMenuOpen ? (
+          <>
+            <motion.button
+              type="button"
+              aria-label="Close navigation menu"
+              className="fixed inset-0 z-50 bg-slate-900/40 lg:hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+
+            <motion.aside
+              className="fixed right-0 top-0 z-50 h-dvh w-80 max-w-[85vw] bg-white p-5 lg:hidden"
+              style={{ boxShadow: '0 12px 28px rgba(15, 23, 42, 0.22)' }}
+              initial={{ x: '100%', opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: '100%', opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 360, damping: 34 }}
+            >
+              <div className="mb-6 flex items-center justify-between">
+                <img src={logo} alt="iGEM UB logo" className="h-9 w-auto" />
+                <button
+                  type="button"
+                  aria-label="Close navigation menu"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#203458] hover:bg-slate-100"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <span className="text-4xl leading-none">×</span>
+                </button>
+              </div>
+
+              <nav className="flex flex-col gap-2">
+                {navItems.map((item, index) => (
+                  <motion.div
+                    key={`mobile-${item.to}`}
+                    initial={{ opacity: 0, x: 16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.06 }}
+                  >
+                    <NavLink
+                      to={item.to}
+                      end={item.end}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={({ isActive }) =>
+                        [
+                          'block rounded-xl px-4 py-3 font-semibold transition-colors duration-200',
+                          isActive
+                            ? 'bg-gradient-to-r from-[#406EB5] to-[#2C4B7C] !text-white'
+                            : 'text-[#203458] hover:bg-slate-100',
+                        ].join(' ')
+                      }
+                    >
+                      {item.to === '/results' ? 'Results' : item.label}
+                    </NavLink>
+                  </motion.div>
+                ))}
+              </nav>
+            </motion.aside>
+          </>
+        ) : null}
+      </AnimatePresence>
+
+      <div className="fixed z-50 hidden bg-transparent lg:block">
         <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-8 gap-y-3 px-4 py-3 sm:px-6">
           <span
             className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm text-[#1f355d]"
@@ -169,8 +258,8 @@ function Navbar() {
                 <div
                   className="absolute inset-x-0 bottom-0 h-11 rounded-full bg-white"
                   style={{ boxShadow: logoShellShadow }}
-                />
-              )}
+                />              
+                )}
             </div>
 
             {capsule.isVisible ? (
