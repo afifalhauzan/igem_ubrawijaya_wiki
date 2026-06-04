@@ -1,0 +1,78 @@
+.route-suspense-fallback__mascot {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+}
+
+.route-suspense-fallback__mascot--first {
+  animation: route-mascot-first 1s ease-in-out infinite;
+}
+
+.route-suspense-fallback__mascot--second {
+  animation: route-mascot-second 1s ease-in-out infinite;
+}
+
+.route-suspense-fallback__dot {
+  animation: route-loading-dot 0.8s ease-in-out infinite;
+}
+
+.route-suspense-fallback__dot--1 {
+  animation-delay: 0s;
+}
+
+.route-suspense-fallback__dot--2 {
+  animation-delay: 0.2s;
+}
+
+.route-suspense-fallback__dot--3 {
+  animation-delay: 0.4s;
+}
+
+@keyframes route-mascot-first {
+  0%,
+  45% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.96);
+  }
+}
+
+@keyframes route-mascot-second {
+  0%,
+  45% {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.96);
+  }
+
+  50%,
+  95% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.96);
+  }
+}
+
+@keyframes route-loading-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.2;
+    transform: translateY(0);
+  }
+
+  40% {
+    opacity: 1;
+    transform: translateY(-0.2rem);
+  }
+}

@@ -1,21 +1,90 @@
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
+import type { ComponentType, LazyExoticComponent } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import RouteSuspenseFallback from '../components/ui/RouteSuspenseFallback/RouteSuspenseFallback'
 import MainLayout from '../layouts/MainLayout'
 
-const HomePage = lazy(() => import('../pages/Home'))
-const ProjectPage = lazy(() => import('../pages/Project'))
-const DesignPage = lazy(() => import('../pages/Design'))
-const ExperimentsPage = lazy(() => import('../pages/Experiments'))
-const ResultsPage = lazy(() => import('../pages/Results'))
-const HumanPracticesPage = lazy(() => import('../pages/HumanPractices'))
-const SafetyPage = lazy(() => import('../pages/Safety'))
-const TeamPage = lazy(() => import('../pages/Team'))
-const NotFoundPage = lazy(() => import('../pages/NotFound'))
+type RouteModule = {
+  default: ComponentType
+}
+
+type LazyRouteComponent = LazyExoticComponent<ComponentType> & {
+  preload: () => Promise<RouteModule>
+}
+
+const wait = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay))
+
+let shouldDelayInitialSuspense = true
+
+const loadRouteModule = (importer: () => Promise<RouteModule>, delay = 2000) => {
+  const modulePromise = importer()
+
+  if (!shouldDelayInitialSuspense) {
+    return modulePromise
+  }
+
+  shouldDelayInitialSuspense = false
+
+  return Promise.all([modulePromise, wait(delay)]).then(([module]) => module)
+}
+
+const lazyRoute = (importer: () => Promise<RouteModule>) => {
+  let cachedModulePromise: Promise<RouteModule> | null = null
+
+  const load = () => {
+    cachedModulePromise ??= loadRouteModule(importer)
+    return cachedModulePromise
+  }
+
+  const LazyRoute = lazy(load) as LazyRouteComponent
+
+  LazyRoute.preload = () => {
+    cachedModulePromise ??= importer()
+    return cachedModulePromise
+  }
+
+  return LazyRoute
+}
+
+const HomePage = lazyRoute(() => import('../pages/Home'))
+const ProjectPage = lazyRoute(() => import('../pages/Project'))
+const DesignPage = lazyRoute(() => import('../pages/Design'))
+const ExperimentsPage = lazyRoute(() => import('../pages/Experiments'))
+const ResultsPage = lazyRoute(() => import('../pages/Results'))
+const HumanPracticesPage = lazyRoute(() => import('../pages/HumanPractices'))
+const SafetyPage = lazyRoute(() => import('../pages/Safety'))
+const TeamPage = lazyRoute(() => import('../pages/Team'))
+const NotFoundPage = lazyRoute(() => import('../pages/NotFound'))
+
+const routeModules = [
+  HomePage,
+  ProjectPage,
+  DesignPage,
+  ExperimentsPage,
+  ResultsPage,
+  HumanPracticesPage,
+  SafetyPage,
+  TeamPage,
+  NotFoundPage,
+] as const
+
+function RouteModulePreloader() {
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void Promise.all(routeModules.map((routeModule) => routeModule.preload())).catch(() => undefined)
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [])
+
+  return null
+}
 
 function AppRouter() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<div className="px-6 py-10 text-sm text-slate-600">Loading page...</div>}>
+      <RouteModulePreloader />
+      <Suspense fallback={<RouteSuspenseFallback />}>
         <Routes>
           <Route element={<MainLayout />}>
             <Route path="/" element={<HomePage />} />
