@@ -4,15 +4,72 @@ import { NavLink, useLocation } from 'react-router-dom'
 import LeftRail from './LeftRail'
 import RightRail from './RightRail'
 import logo from '../../../assets/logo.svg'
+import { ChevronDown } from 'lucide-react'
 
-const navItems = [
+type NavChild = {
+  to: string
+  label: string
+}
+
+type NavSection = {
+  to: string
+  label: string
+  end?: boolean
+  children?: NavChild[]
+  panelWidth?: number
+}
+
+const navSections: NavSection[] = [
   { to: '/', label: 'Home', end: true },
-  { to: '/project', label: 'Project' },
-  { to: '/wet-lab', label: 'Wet Lab' },
-  { to: '/dry-lab', label: 'Dry Lab' },
-  { to: '/engagement', label: 'Engagement' },
+  {
+    to: '/project',
+    label: 'Project',
+    children: [
+      { to: '/project/description', label: 'Description' },
+      { to: '/project/engineering', label: 'Engineering' },
+      { to: '/project/results', label: 'Results' },
+      { to: '/project/contribution', label: 'Contribution' },
+    ],
+    panelWidth: 320,
+  },
+  {
+    to: '/wet-lab',
+    label: 'Wet Lab',
+    children: [
+      { to: '/wet-lab/experiments', label: 'Experiments' },
+      { to: '/wet-lab/notebook', label: 'Notebook' },
+      { to: '/wet-lab/measurement', label: 'Measurement' },
+      { to: '/wet-lab/alternative-platform', label: 'Alternative Platform' },
+      { to: '/wet-lab/safety-security', label: 'Safety and Security' },
+    ],
+    panelWidth: 336,
+  },
+  {
+    to: '/dry-lab',
+    label: 'Dry Lab',
+    children: [
+      { to: '/dry-lab/model', label: 'Model' },
+      { to: '/dry-lab/software', label: 'Software' },
+      { to: '/dry-lab/hardware', label: 'Hardware' },
+    ],
+    panelWidth: 220,
+  },
+  {
+    to: '/engagement',
+    label: 'Engagement',
+    children: [
+      { to: '/engagement/entrepreneurship', label: 'Entrepreneurship' },
+      { to: '/engagement/human-practices', label: 'Human Practices' },
+      { to: '/engagement/education', label: 'Education' },
+      { to: '/engagement/inclusivity', label: 'Inclusivity' },
+      { to: '/engagement/sustainability', label: 'Sustainability' },
+    ],
+    panelWidth: 320,
+  },
   { to: '/team', label: 'Team' },
 ]
+
+const topLevelNavItems = navSections.map(({ to, label, end }) => ({ to, label, end }))
 
 type CapsulePosition = {
   x: number
@@ -37,8 +94,13 @@ function isItemActive(pathname: string, to: string, end?: boolean) {
 function Navbar() {
   const location = useLocation()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [openSection, setOpenSection] = useState<string | null>(null)
+  const [dropdownLeft, setDropdownLeft] = useState(0)
+  const [dropdownWidth, setDropdownWidth] = useState(0)
   const railRef = useRef<HTMLElement | null>(null)
+  const desktopNavRef = useRef<HTMLDivElement | null>(null)
   const itemRefs = useRef<Record<string, HTMLAnchorElement | null>>({})
+  const sectionRefs = useRef<Record<string, HTMLAnchorElement | null>>({})
   const logoShellShadow =
     '0 6px 14px rgba(15, 23, 42, 0.18), 0 1px 2px rgba(15, 23, 42, 0.12), inset 1px 1px 5px rgba(0, 0, 0, 0.08)'
   const railHeight = 44
@@ -51,13 +113,16 @@ function Navbar() {
   })
   const [railWidth, setRailWidth] = useState(0)
 
+  const activeDropdownSection = navSections.find((section) => section.to === openSection)
+  const dropdownSection = activeDropdownSection?.children?.length ? activeDropdownSection : null
+
   const updateCapsulePosition = useCallback(() => {
     const rail = railRef.current
     if (!rail) {
       return
     }
 
-    const activeItem = navItems.find((item) => isItemActive(location.pathname, item.to, item.end))
+    const activeItem = navSections.find((item) => isItemActive(location.pathname, item.to, item.end))
     if (!activeItem) {
       setCapsule((prev) => ({ ...prev, isVisible: false }))
       return
@@ -79,6 +144,27 @@ function Navbar() {
     })
   }, [location.pathname])
 
+  const updateDropdownPosition = useCallback(() => {
+    if (!dropdownSection) {
+      return
+    }
+
+    const container = desktopNavRef.current
+    const target = sectionRefs.current[dropdownSection.to]
+    if (!container || !target) {
+      return
+    }
+
+    const containerRect = container.getBoundingClientRect()
+    const targetRect = target.getBoundingClientRect()
+    const width = dropdownSection.panelWidth ?? 300
+    const desiredLeft = targetRect.left - containerRect.left
+    const maxLeft = Math.max(0, containerRect.width - width - 8)
+
+    setDropdownWidth(width)
+    setDropdownLeft(Math.min(Math.max(0, desiredLeft), maxLeft))
+  }, [dropdownSection])
+
   const leftRailWidth = Math.max(0, capsule.x - railGap / 2)
   const rightRailStart = capsule.x + capsule.width + railGap / 2
   const rightRailWidth = Math.max(0, railWidth - rightRailStart)
@@ -89,11 +175,20 @@ function Navbar() {
     return () => cancelAnimationFrame(frameId)
   }, [updateCapsulePosition])
 
+  useLayoutEffect(() => {
+    updateDropdownPosition()
+    const frameId = requestAnimationFrame(updateDropdownPosition)
+    return () => cancelAnimationFrame(frameId)
+  }, [updateDropdownPosition])
+
   useEffect(() => {
     let frameId = 0
     const handleResize = () => {
       cancelAnimationFrame(frameId)
-      frameId = requestAnimationFrame(updateCapsulePosition)
+      frameId = requestAnimationFrame(() => {
+        updateCapsulePosition()
+        updateDropdownPosition()
+      })
     }
 
     window.addEventListener('resize', handleResize)
@@ -101,10 +196,11 @@ function Navbar() {
       cancelAnimationFrame(frameId)
       window.removeEventListener('resize', handleResize)
     }
-  }, [updateCapsulePosition])
+  }, [updateCapsulePosition, updateDropdownPosition])
 
   useEffect(() => {
     setIsMobileMenuOpen(false)
+    setOpenSection(null)
   }, [location.pathname])
 
   useEffect(() => {
@@ -116,7 +212,10 @@ function Navbar() {
     let isMounted = true
     const remeasure = () => {
       if (isMounted) {
-        requestAnimationFrame(updateCapsulePosition)
+        requestAnimationFrame(() => {
+          updateCapsulePosition()
+          updateDropdownPosition()
+        })
       }
     }
 
@@ -129,14 +228,14 @@ function Navbar() {
       isMounted = false
       fonts.removeEventListener('loadingdone', remeasure)
     }
-  }, [updateCapsulePosition])
+  }, [updateCapsulePosition, updateDropdownPosition])
 
   return (
     <header className="relative flex w-full justify-center bg-transparent">
       <div className="fixed z-50 w-full px-4 py-3 sm:px-6 lg:hidden">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between">
           <span
-            className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm text-[#1f355d]"
+            className="inline-flex items-center rounded-full bg-white px-4 text-sm text-[#1f355d]"
             style={{ boxShadow: logoShellShadow }}
           >
             <img src={logo} alt="iGEM UB logo" className="h-7 w-auto" />
@@ -194,7 +293,7 @@ function Navbar() {
               </div>
 
               <nav className="flex flex-col gap-2">
-                {navItems.map((item, index) => (
+                {topLevelNavItems.map((item, index) => (
                   <motion.div
                     key={`mobile-${item.to}`}
                     initial={{ opacity: 0, x: 16 }}
@@ -224,23 +323,30 @@ function Navbar() {
         ) : null}
       </AnimatePresence>
 
-      <div className="fixed z-50 hidden bg-transparent lg:block">
-        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-8 gap-y-3 px-4 py-3 sm:px-6">
+      {/* 1. Perbaikan posisi horizontal: Tambahkan inset-x-0, lg:flex, lg:justify-center, dan top-4 (opsional untuk jarak) */}
+      <div className="fixed inset-x-0 top-4 z-50 hidden bg-transparent lg:flex lg:justify-center">
+        {/* 2. Perbaikan posisi horizontal: max-w-7xl dan justify-center memastikan konten berada di tengah */}
+        <div className="flex w-full max-w-7xl items-center justify-center gap-8 px-4 py-2 sm:px-6">
           <span
             className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm text-[#1f355d]"
             style={{ boxShadow: logoShellShadow }}
           >
             <img src={logo} alt="iGEM UB logo" className="mr-2 h-7 w-auto" />
           </span>
-          <div className="relative inline-flex shrink-0 overflow-visible text-sm">
-            <div className="pointer-events-none absolute inset-0 z-0">
+
+          <div
+            ref={desktopNavRef}
+            className="relative inline-flex shrink-0 overflow-visible text-sm"
+            onMouseLeave={() => setOpenSection(null)}
+          >
+            <div className="pointer-events-none absolute left-0 inset-y-0 z-10 flex items-center">
               {capsule.isVisible ? (
                 <>
                   {leftRailWidth > 0 ? (
                     <LeftRail
                       width={leftRailWidth}
                       height={railHeight}
-                      className="absolute bottom-0 left-0"
+                      className="absolute left-0 top-1/2 -translate-y-1/2"
                       style={{ filter: railDropShadow }}
                     />
                   ) : null}
@@ -248,15 +354,15 @@ function Navbar() {
                     <RightRail
                       width={rightRailWidth}
                       height={railHeight}
-                      className="absolute bottom-0"
+                      className="absolute top-1/2 -translate-y-1/2"
                       style={{ left: rightRailStart, filter: railDropShadow }}
                     />
                   ) : null}
                 </>
               ) : (
                 <div
-                  className="absolute inset-x-0 bottom-0 h-11 rounded-full bg-white"
-                  style={{ boxShadow: logoShellShadow }}
+                  className="absolute inset-0 rounded-full bg-white"
+                  style={{ filter: logoShellShadow }}
                 />
               )}
             </div>
@@ -266,30 +372,102 @@ function Navbar() {
                 initial={false}
                 animate={{ x: capsule.x, width: capsule.width }}
                 transition={capsuleTransition}
-                className="pointer-events-none absolute left-0 z-10 h-11 rounded-full bg-gradient-to-r from-[#406EB5] to-[#2C4B7C] shadow-[0_12px_26px_rgba(38,74,138,0.34),inset_0_1px_2px_rgba(255,255,255,0.2)]"
+                className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-full bg-gradient-to-r from-[#406EB5] to-[#2C4B7C] shadow-[0_12px_26px_rgba(38,74,138,0.34),inset_0_1px_2px_rgba(255,255,255,0.2)]"
+                style={{ height: railHeight }}
               />
             ) : null}
 
             <nav ref={railRef} className="relative z-20 flex w-fit items-center gap-1 p-0.5">
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.end}
-                  ref={(element) => {
-                    itemRefs.current[item.to] = element
-                  }}
-                  className={({ isActive }) =>
-                    [
-                      'relative rounded-full px-6 py-2.5 font-bold tracking-[0.06em] transition-colors duration-200',
-                      isActive ? '!text-white' : 'text-[#203458] hover:text-[#172b4b]',
-                    ].join(' ')
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              ))}
+              {navSections.map((section) => {
+                const isActive = isItemActive(location.pathname, section.to, section.end)
+                const isOpen = openSection === section.to
+                const hasChildren = Boolean(section.children?.length)
+
+                return (
+                  <div key={section.to} className="relative">
+                    <NavLink
+                      ref={(element) => {
+                        itemRefs.current[section.to] = element
+                        sectionRefs.current[section.to] = element
+                      }}
+                      to={section.to}
+                      end={section.end}
+                      onMouseEnter={() => {
+                        if (hasChildren) {
+                          setOpenSection(section.to)
+                        }
+                      }}
+                      onFocus={() => {
+                        if (hasChildren) {
+                          setOpenSection(section.to)
+                        }
+                      }}
+                      className={[
+                        'flex items-center gap-2 rounded-full px-7 py-2.5 font-bold tracking-[0.06em] transition-colors duration-200',
+                        isActive
+                          ? '!text-white'
+                          : 'text-[#203458] hover:text-[#406EB5]',
+                      ].join(' ')}
+                    >
+                      {section.label}
+                      {hasChildren ? (
+                        <span
+                          className={[
+                            'text-[10px] transition-transform duration-200',
+                            isActive || isOpen ? '-rotate-180' : 'rotate-0',
+                          ].join(' ')}
+                        >
+                          <ChevronDown />
+                        </span>
+                      ) : null}
+                    </NavLink>
+                  </div>
+                )
+              })}
             </nav>
+
+            <AnimatePresence>
+              {dropdownSection ? (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.18 }}
+                  className="absolute top-[calc(100%+0.65rem)] z-50 overflow-hidden rounded-[24px] border border-[#d7e5ef] bg-white shadow-[0_12px_28px_rgba(15,23,42,0.12)]"
+                  style={{
+                    left: dropdownLeft,
+                    width: dropdownWidth,
+                  }}
+                >
+                  <div className="max-h-[22rem] overflow-y-auto p-3">
+                    <div className="flex flex-col gap-1">
+                      {dropdownSection.children?.map((child) => {
+                        const childIsActive = location.pathname === child.to
+
+                        return (
+                          <NavLink
+                            key={child.to}
+                            to={child.to}
+                            onClick={() => setOpenSection(null)}
+                            onMouseEnter={() => setOpenSection(dropdownSection.to)}
+                            className={({ isActive }) =>
+                              [
+                                'rounded-2xl px-4 py-3 text-left text-base transition-colors duration-200',
+                                isActive || childIsActive
+                                  ? 'bg-[#eafaf2] text-[#0a7d5a]'
+                                  : 'text-[#203458] hover:bg-[#f7fbfd] hover:text-[#0a7d5a]',
+                              ].join(' ')
+                            }
+                          >
+                            {child.label}
+                          </NavLink>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
           </div>
         </div>
       </div>

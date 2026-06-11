@@ -1,12 +1,13 @@
-import SectionPageShell from '../../components/layout/SectionPageShell/SectionPageShell'
+import Card from '../../components/ui/Card/Card'
 
 function ProjectPage() {
   return (
-    <SectionPageShell
-      eyebrow="Core"
-      title="Project"
-      description="Project framing, goals, and overall direction live here before branching into the wet-lab, dry-lab, and engagement sections."
-    />
+    <Card className="max-w-3xl">
+      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#406EB5]">Overview</p>
+      <p className="mt-3 text-[#203458]">
+        Project framing, goals, and overall direction live here before branching into the nested project pages.
+      </p>
+    </Card>
   )
 }
 
