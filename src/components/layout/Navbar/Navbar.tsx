@@ -8,11 +8,9 @@ import logo from '../../../assets/logo.svg'
 const navItems = [
   { to: '/', label: 'Home', end: true },
   { to: '/project', label: 'Project' },
-  { to: '/design', label: 'Design' },
-  { to: '/experiments', label: 'Experiments' },
-  { to: '/results', label: 'Result' },
-  { to: '/human-practices', label: 'Human Practices' },
-  { to: '/safety', label: 'Safety' },
+  { to: '/wet-lab', label: 'Wet Lab' },
+  { to: '/dry-lab', label: 'Dry Lab' },
+  { to: '/engagement', label: 'Engagement' },
   { to: '/team', label: 'Team' },
 ]
 
@@ -41,7 +39,8 @@ function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const railRef = useRef<HTMLElement | null>(null)
   const itemRefs = useRef<Record<string, HTMLAnchorElement | null>>({})
-  const logoShellShadow = '2px 2px 5px rgba(0, 0, 0, 0.18), inset 1px 1px 5px rgba(0, 0, 0, 0.08)'
+  const logoShellShadow =
+    '0 6px 14px rgba(15, 23, 42, 0.18), 0 1px 2px rgba(15, 23, 42, 0.12), inset 1px 1px 5px rgba(0, 0, 0, 0.08)'
   const railHeight = 44
   const railDropShadow = 'drop-shadow(2px 2px 5px rgba(0, 0, 0, 0.18))'
   const railGap = 14
@@ -215,7 +214,7 @@ function Navbar() {
                         ].join(' ')
                       }
                     >
-                      {item.to === '/results' ? 'Results' : item.label}
+                      {item.label}
                     </NavLink>
                   </motion.div>
                 ))}
@@ -258,8 +257,8 @@ function Navbar() {
                 <div
                   className="absolute inset-x-0 bottom-0 h-11 rounded-full bg-white"
                   style={{ boxShadow: logoShellShadow }}
-                />              
-                )}
+                />
+              )}
             </div>
 
             {capsule.isVisible ? (

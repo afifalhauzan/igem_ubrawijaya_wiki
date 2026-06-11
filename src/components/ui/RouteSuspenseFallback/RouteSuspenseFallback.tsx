@@ -9,7 +9,7 @@ function RouteSuspenseFallback() {
         <img
           src={mascotDraft1}
           alt="Loading mascot frame one"
-          className="route-suspense-fallback__mascot route-suspense-fallback__mascot--first"
+          className="route-suspense-fallback__mascot route-suspense-fallback__mascot--first scale-103"
         />
         <img
           src={mascotDraft2}

@@ -48,6 +48,10 @@ const lazyRoute = (importer: () => Promise<RouteModule>) => {
 
 const HomePage = lazyRoute(() => import('../pages/Home'))
 const ProjectPage = lazyRoute(() => import('../pages/Project'))
+const WetLabPage = lazyRoute(() => import('../pages/WetLab'))
+const DryLabLayout = lazyRoute(() => import('../pages/DryLab/layout'))
+const DryLabIndexPage = lazyRoute(() => import('../pages/DryLab'))
+const EngagementPage = lazyRoute(() => import('../pages/Engagement'))
 const DesignPage = lazyRoute(() => import('../pages/Design'))
 const ExperimentsPage = lazyRoute(() => import('../pages/Experiments'))
 const ResultsPage = lazyRoute(() => import('../pages/Results'))
@@ -59,6 +63,10 @@ const NotFoundPage = lazyRoute(() => import('../pages/NotFound'))
 const routeModules = [
   HomePage,
   ProjectPage,
+  WetLabPage,
+  DryLabLayout,
+  DryLabIndexPage,
+  EngagementPage,
   DesignPage,
   ExperimentsPage,
   ResultsPage,
@@ -89,12 +97,17 @@ function AppRouter() {
           <Route element={<MainLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/project" element={<ProjectPage />} />
+            <Route path="/wet-lab" element={<WetLabPage />} />
+            <Route path="/dry-lab" element={<DryLabLayout />}>
+              <Route index element={<DryLabIndexPage />} />
+            </Route>
+            <Route path="/engagement" element={<EngagementPage />} />
+            <Route path="/safety" element={<SafetyPage />} />
+            <Route path="/team" element={<TeamPage />} />
             <Route path="/design" element={<DesignPage />} />
             <Route path="/experiments" element={<ExperimentsPage />} />
             <Route path="/results" element={<ResultsPage />} />
             <Route path="/human-practices" element={<HumanPracticesPage />} />
-            <Route path="/safety" element={<SafetyPage />} />
-            <Route path="/team" element={<TeamPage />} />
             <Route path="/404" element={<NotFoundPage />} />
             <Route path="*" element={<Navigate to="/404" replace />} />
           </Route>
